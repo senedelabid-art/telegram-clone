@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .chat-bg { background-color: #8bb39c; background-image: radial-gradient(#7a9e88 1px, transparent 0); background-size: 16px 16px; }
+        .call-gradient { background: linear-gradient(180deg, #3a88e9 0%, #8e54e9 100%); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white font-sans select-none flex justify-center items-center min-h-screen">
+
+    <div id="app-container" class="w-full max-w-md h-screen bg-[#17212b] relative overflow-hidden flex flex-col justify-between shadow-2xl">
+
+        <!-- 0. تسجيل الدخول -->
+        <div id="auth-screen" class="absolute inset-0 z-50 bg-[#17212b] flex flex-col justify-center p-6 space-y-4">
+            <div class="text-center mb-4">
+                <i class="fa-brands fa-telegram text-blue-400 text-6xl mb-2"></i>
+                <h2 class="text-2xl font-bold text-white">تليجرام</h2>
+                <p class="text-xs text-gray-400">سجل أو أنشئ حسابك الخاص لاستخدام التطبيق</p>
+            </div>
+            <input type="text" id="auth-username" placeholder="اسم المستخدم (Username)" class="w-full bg-[#0e1621] border border-gray-700 rounded-xl p-3 text-xs outline-none text-white">
+            <input type="text" id="auth-displayname" placeholder="الاسم الظاهر (مثال: أحمد)" class="w-full bg-[#0e1621] border border-gray-700 rounded-xl p-3 text-xs outline-none text-white">
+            <input type="text" id="auth-phone" placeholder="رقم الهاتف (مثال: +964...)" class="w-full bg-[#0e1621] border border-gray-700 rounded-xl p-3 text-xs outline-none text-white">
+            <input type="password" id="auth-password" placeholder="كلمة المرور" class="w-full bg-[#0e1621] border border-gray-700 rounded-xl p-3 text-xs outline-none text-white">
+            <button onclick="handleAuth()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-xl text-xs transition">دخول / تسجيل</button>
+        </div>
+
+        <!-- 1. شاشة المكالمات -->
+        <div id="call-screen" class="hidden absolute inset-0 z-50 call-gradient flex flex-col justify-between p-6">
+            <div class="flex justify-start">
+                <button onclick="endCall()" class="text-white text-xl"><i class="fa-solid fa-compress"></i></button>
+            </div>
+            <div class="flex flex-col items-center gap-3">
+                <div class="w-28 h-28 rounded-full border-4 border-blue-300/40 p-1 flex items-center justify-center">
+                    <div class="w-full h-full bg-amber-600 rounded-full flex items-center justify-center text-3xl font-bold text-white" id="call-user-avatar">M</div>
+                </div>
+                <h2 class="text-2xl font-bold" id="call-user-name">اسم المتصل</h2>
+                <p class="text-xs text-white/80" id="call-status">الخط مشغول</p>
+            </div>
+            <div class="flex justify-around items-center mb-6">
+                <button onclick="endCall()" class="flex flex-col items-center gap-2">
+                    <div class="w-14 h-14 bg-white rounded-full flex items-center justify-center text-purple-600 text-xl font-bold shadow-lg">
+                        <i class="fa-solid fa-xmark"></i>
+                    </div>
+                    <span class="text-xs">رفض</span>
+                </button>
+                <button onclick="endCall()" class="flex flex-col items-center gap-2">
+                    <div class="w-14 h-14 bg-green-500 rounded-full flex items-center justify-center text-white text-xl shadow-lg">
+                        <i class="fa-solid fa-phone"></i>
+                    </div>
+                    <span class="text-xs">معاودة الاتصال</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. الشات المباشر -->
+        <div id="chat-window" class="hidden absolute inset-0 z-40 bg-[#17212b] flex flex-col justify-between">
+            <div class="p-3 bg-[#17212b] border-b border-gray-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <button onclick="closeChat()"><i class="fa-solid fa-arrow-right text-gray-300"></i></button>
+                    <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold text-sm text-white" id="chat-avatar">U</div>
+                    <div>
+                        <h3 class="font-bold text-sm text-white" id="chat-name">User Name</h3>
+                        <p class="text-[10px] text-gray-400">آخر ظهور كان منذ زمن طويل</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 text-gray-300 text-base">
+                    <button onclick="startCall()"><i class="fa-solid fa-phone"></i></button>
+                    <i class="fa-solid fa-ellipsis-vertical"></i>
+                </div>
+            </div>
+
+            <div id="chat-messages" class="flex-1 p-3 overflow-y-auto space-y-2 chat-bg"></div>
+
+            <div class="p-2 bg-[#17212b] border-t border-gray-800 flex items-center gap-2">
+                <div class="flex-1 bg-[#0e1621] rounded-full px-3 py-2 flex items-center gap-2">
+                    <i class="fa-regular fa-face-smile text-gray-400 text-base"></i>
+                    <input type="text" id="chat-input" placeholder="الرسالة" class="bg-transparent border-none outline-none text-xs text-white w-full">
+                    <i class="fa-solid fa-paperclip text-gray-400 text-sm"></i>
+                </div>
+                <button onclick="sendMessage()" class="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center text-white">
+                    <i class="fa-solid fa-paper-plane text-xs"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- HEADER TABS -->
+        <header class="p-3 bg-[#17212b] border-b border-gray-800 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-blue-400">Telegram</h1>
+            <i class="fa-solid fa-ellipsis-vertical text-gray-400"></i>
+        </header>
+
+        <!-- CONTENT TABS -->
+        <main class="flex-1 overflow-y-auto relative">
+            <div id="tab-chats" class="space-y-2">
+                <div class="p-3 border-b border-gray-800 flex gap-4 overflow-x-auto no-scrollbar">
+                    <div class="flex flex-col items-center gap-1">
+                        <div class="relative w-12 h-12 rounded-full border-2 border-blue-500 p-0.5">
+                            <div class="w-full h-full bg-gray-700 rounded-full flex items-center justify-center text-[10px]">قصتي</div>
+                            <span class="absolute bottom-0 right-0 bg-blue-500 text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center">+</span>
+                        </div>
+                        <span class="text-[10px] text-gray-400">قصتي</span>
+                    </div>
+                </div>
+
+                <div class="px-3 py-1">
+                    <div class="bg-[#242f3d] rounded-full flex items-center px-3 py-1.5 gap-2">
+                        <i class="fa-solid fa-magnifying-glass text-gray-400 text-xs"></i>
+                        <input type="text" placeholder="البحث في المحادثات" class="bg-transparent border-none text-xs text-white outline-none w-full">
+                    </div>
+                </div>
+
+                <div id="chat-list" class="divide-y divide-gray-800/40"></div>
+            </div>
+
+            <div id="tab-profile" class="hidden p-4 space-y-4 bg-[#0e1621] min-h-full">
+                <div class="flex flex-col items-center gap-1">
+                    <div class="w-20 h-20 rounded-full bg-blue-600 flex items-center justify-center text-2xl font-bold text-white shadow-md" id="my-avatar">U</div>
+                    <h2 class="text-lg font-bold text-white mt-1" id="my-displayname">User Name</h2>
+                    <p class="text-xs text-gray-400">متصل</p>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div class="bg-[#17212b] p-3 rounded-xl border border-gray-800 flex flex-col items-center gap-1">
+                        <i class="fa-solid fa-camera text-blue-400 text-base"></i>
+                        <span class="text-[10px] text-gray-300">تعيين صورة</span>
+                    </div>
+                    <div class="bg-[#17212b] p-3 rounded-xl border border-gray-800 flex flex-col items-center gap-1">
+                        <i class="fa-solid fa-pen text-blue-400 text-base"></i>
+                        <span class="text-[10px] text-gray-300">تعديل البيانات</span>
+                    </div>
+                    <div class="bg-[#17212b] p-3 rounded-xl border border-gray-800 flex flex-col items-center gap-1">
+                        <i class="fa-solid fa-gear text-blue-400 text-base"></i>
+                        <span class="text-[10px] text-gray-300">الإعدادات</span>
+                    </div>
+                </div>
+
+                <div class="bg-[#17212b] rounded-xl p-3 border border-gray-800 space-y-3 text-xs">
+                    <div>
+                        <p class="font-bold text-white" id="my-phone">+964 770 000 0000</p>
+                        <p class="text-[10px] text-gray-400">جوال</p>
+                    </div>
+                    <hr class="border-gray-800">
+                    <div>
+                        <p class="font-bold text-blue-400" id="my-username">@username</p>
+                        <p class="text-[10px] text-gray-400">اسم المستخدم</p>
+                    </div>
+                </div>
+
+                <button onclick="logout()" class="w-full bg-red-500/10 border border-red-500/30 text-red-500 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>تسجيل الخروج</span>
+                </button>
+            </div>
+        </main>
+
+        <!-- FLOATING BOTTOM NAV -->
+        <nav class="border-t border-gray-800 bg-[#17212b] flex justify-around p-2 text-gray-400 text-[10px]">
+            <button onclick="switchTab('chats')" id="nav-chats" class="flex flex-col items-center gap-1 text-blue-400">
+                <i class="fa-solid fa-comment text-base"></i>
+                <span>المحادثات</span>
+            </button>
+            <button class="flex flex-col items-center gap-1">
+                <i class="fa-solid fa-user-group text-base"></i>
+                <span>جهات الاتصال</span>
+            </button>
+            <button onclick="switchTab('profile')" id="nav-profile" class="flex flex-col items-center gap-1">
+                <i class="fa-solid fa-circle-user text-base"></i>
+                <span>الملف الشخصي</span>
+            </button>
+        </nav>
+
+    </div>
+
+    <script>
+        let currentTargetUser = '';
+
+        async function handleAuth() {
+            const username = document.getElementById('auth-username').value.trim().toLowerCase();
+            const display_name = document.getElementById('auth-displayname').value.trim();
+            const phone = document.getElementById('auth-phone').value.trim();
+            const password = document.getElementById('auth-password').value;
+
+            const res = await fetch('/api/auth', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, display_name, phone, password })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                localStorage.setItem('user_data', JSON.stringify(data));
+                initUserData();
+            } else {
+                alert(data.message);
+            }
+        }
+
+        function initUserData() {
+            const data = JSON.parse(localStorage.getItem('user_data') || '{}');
+            if (data.username) {
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('my-displayname').innerText = data.display_name;
+                document.getElementById('my-username').innerText = `@${data.username}`;
+                document.getElementById('my-phone').innerText = data.phone;
+                document.getElementById('my-avatar').innerText = data.display_name.charAt(0).toUpperCase();
+                loadChats();
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('user_data');
+            location.reload();
+        }
+
+        function switchTab(tab) {
+            document.getElementById('tab-chats').classList.add('hidden');
+            document.getElementById('tab-profile').classList.add('hidden');
+            document.getElementById('nav-chats').classList.remove('text-blue-400');
+            document.getElementById('nav-profile').classList.remove('text-blue-400');
+
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+            document.getElementById(`nav-${tab}`).classList.add('text-blue-400');
+        }
+
+        async function loadChats() {
+            const data = JSON.parse(localStorage.getItem('user_data') || '{}');
+            const res = await fetch(`/api/chats?user=${data.username}`);
+            const chats = await res.json();
+
+            const container = document.getElementById('chat-list');
+            container.innerHTML = chats.map(c => `
+                <div onclick="openChat('${c.username}', '${c.display_name}')" class="flex items-center justify-between p-3 hover:bg-[#202b36] cursor-pointer">
+                    <div class="flex items-center gap-3">
+                        <div class="w-11 h-11 rounded-full bg-blue-600 flex items-center justify-center font-bold text-sm text-white">
+                            ${c.display_name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-xs text-white">${c.display_name}</h4>
+                            <p class="text-[11px] text-gray-400 truncate max-w-[170px]">${c.last_message}</p>
+                        </div>
+                    </div>
+                    <span class="text-[9px] text-gray-500">${c.time}</span>
+                </div>
+            `).join('');
+        }
+
+        function openChat(username, displayName) {
+            currentTargetUser = username;
+            document.getElementById('chat-name').innerText = displayName;
+            document.getElementById('chat-avatar').innerText = displayName.charAt(0).toUpperCase();
+            document.getElementById('chat-window').classList.remove('hidden');
+            loadMessages();
+        }
+
+        function closeChat() {
+            document.getElementById('chat-window').classList.add('hidden');
+            currentTargetUser = '';
+            loadChats();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            const data = JSON.parse(localStorage.getItem('user_data') || '{}');
+
+            if (!message || !currentTargetUser) return;
+
+            await fetch('/api/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sender: data.username, receiver: currentTargetUser, message })
+            });
+
+            input.value = '';
+            loadMessages();
+        }
+
+        async function loadMessages() {
+            const data = JSON.parse(localStorage.getItem('user_data') || '{}');
+            if (!currentTargetUser) return;
+
+            const res = await fetch(`/api/messages?sender=${data.username}&receiver=${currentTargetUser}`);
+            const msgs = await res.json();
+
+            const container = document.getElementById('chat-messages');
+            container.innerHTML = msgs.map(m => {
+                const isMe = m.sender === data.username;
+                return `
+                    <div class="flex ${isMe ? 'justify-start' : 'justify-end'}">
+                        <div class="${isMe ? 'bg-[#eeffde] text-black' : 'bg-white text-black'} px-3 py-1.5 rounded-xl max-w-[75%] shadow-sm relative text-xs">
+                            <p>${m.message}</p>
+                            <div class="flex items-center justify-end gap-1 mt-0.5 text-[9px] text-gray-500">
+                                <span>${m.time}</span>
+                                ${isMe ? '<i class="fa-solid fa-check-double text-green-600"></i>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function startCall() {
+            const displayName = document.getElementById('chat-name').innerText;
+            document.getElementById('call-user-name').innerText = displayName;
+            document.getElementById('call-user-avatar').innerText = displayName.charAt(0).toUpperCase();
+            document.getElementById('call-screen').classList.remove('hidden');
+        }
+
+        function endCall() {
+            document.getElementById('call-screen').classList.add('hidden');
+        }
+
+        initUserData();
+    </script>
+</body>
+</html>
