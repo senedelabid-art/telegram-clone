@@ -1,4 +1,8 @@
+import os
 import flet as ft
+from flask import Flask
+
+app = Flask(__name__)
 
 
 def main(page: ft.Page):
@@ -24,4 +28,20 @@ def main(page: ft.Page):
   )
 
 
-ft.app(target=main, view=ft.AppView.WEB_BROWSER, port=8080)
+@app.route("/")
+def home():
+  return "Menbr Chat Server is running!"
+
+
+# تشغيل Flet مع Flask ليتوافق مع Render
+if __name__ == "__main__":
+  port = int(os.environ.get("PORT", 8080))
+  # تشغيل Flet في خلفية مستقلة
+  import threading
+
+  threading.Thread(
+      target=lambda: ft.app(
+          target=main, view=ft.AppView.WEB_BROWSER, port=8550
+      )
+  ).start()
+  app.run(host="0.0.0.0", port=port)
