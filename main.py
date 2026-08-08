@@ -1,22 +1,27 @@
-# Menbr Chat (Production-Ready)
+import flet as ft
 
-تطبيق دردشة فردية حقيقي يعتمد على `@username` بنسبة 100% مع ربط سحابي كامل عبر Firebase ومكالمات عالية الجودة عبر Agora.
+def main(page: ft.Page):
+    page.title = "Menbr Chat"
+    page.vertical_alignment = ft.MainAxisAlignment.CENTER
+    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+    page.theme_mode = ft.ThemeMode.DARK
 
-## 📁 هيكلية المشروع (Project Architecture)
-- **Frontend / UI**: واجهة مستخدم تفاعلية مطابقة لـ واتساب.
-- **Backend / Database**: سحابي بالكامل عبر Firebase Firestore (بدون سيرفر تقليدي).
-- **Authentication**: مصادقة المستخدمين والتحقق من فرز الـ `@username`.
-- **Storage**: تخزين الملفات والميديا حتى حجم 2GB عبر Firebase Storage.
-- **Calls**: نظام المكالمات الصوتية والفيديو الفردية عبر مكتبة Agora.
+    username_field = ft.TextField(label="Username (@username)", prefix_text="@", width=300)
+    email_field = ft.TextField(label="Email", width=300)
+    password_field = ft.TextField(label="Password", password=True, can_reveal_password=True, width=300)
 
-## 🚀 الخطوات لرفع المشروع على GitHub:
-1. انشئ مستودعاً جديداً (Repository) على حسابك في GitHub باسم `menbr-chat`.
-2. انسخ الملفات الأساسية للمشروع واقفل إعدادات الربط السحابي.
-3. ارفع الملفات عبر أوامر التيرمنال:
-   ```bash
-   git init
-   git add .
-   git commit -m "Production release: Menbr Chat core architecture"
-   git branch -M main
-   git remote add origin [https://github.com/YOUR_USERNAME/menbr-chat.git](https://github.com/YOUR_USERNAME/menbr-chat.git)
-   git push -u origin main
+    def handle_login(e):
+        pass
+
+    page.add(
+        ft.Column([
+            ft.Text("Menbr Chat", size=30, weight=ft.FontWeight.BOLD, color=ft.colors.GREEN),
+            ft.Container(height=20),
+            username_field,
+            email_field,
+            password_field,
+            ft.ElevatedButton("دخول / انشاء حساب", on_click=handle_login, width=300)
+        ], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+    )
+
+ft.app(target=main)
